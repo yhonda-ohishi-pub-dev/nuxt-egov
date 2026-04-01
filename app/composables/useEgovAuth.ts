@@ -1,6 +1,3 @@
-const AUTH_BASE = 'https://account.e-gov.go.jp/auth'
-const API_BASE = 'https://api.e-gov.go.jp/shinsei/v2'
-
 interface TokenResponse {
   access_token: string
   expires_in: number
@@ -13,6 +10,9 @@ interface TokenResponse {
 
 export function useEgovAuth() {
   const config = useRuntimeConfig()
+  const authBase = config.public.egovAuthBase as string
+  const apiBase = config.public.egovApiBase as string
+
   const accessToken = useState<string | null>('egov_access_token', () => null)
   const refreshToken = useState<string | null>('egov_refresh_token', () => null)
   const tokenExpiresAt = useState<number>('egov_token_expires_at', () => 0)
@@ -38,7 +38,7 @@ export function useEgovAuth() {
       code_challenge_method: 'S256',
     })
 
-    window.location.href = `${AUTH_BASE}/auth?${params}`
+    window.location.href = `${authBase}/auth?${params}`
   }
 
   async function handleCallback(code: string, state: string) {
@@ -55,7 +55,7 @@ export function useEgovAuth() {
     const clientId = config.public.egovClientId as string
     const redirectUri = config.public.egovRedirectUri as string
 
-    const res = await fetch(`${AUTH_BASE}/token`, {
+    const res = await fetch(`${authBase}/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -86,7 +86,7 @@ export function useEgovAuth() {
 
     const clientId = config.public.egovClientId as string
 
-    const res = await fetch(`${AUTH_BASE}/token`, {
+    const res = await fetch(`${authBase}/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -125,7 +125,7 @@ export function useEgovAuth() {
     }
     if (!accessToken.value) throw new Error('Not authenticated')
 
-    const url = new URL(`${API_BASE}${path}`)
+    const url = new URL(`${apiBase}${path}`)
     if (params) {
       for (const [k, v] of Object.entries(params)) {
         url.searchParams.set(k, v)
