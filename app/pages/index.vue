@@ -57,7 +57,12 @@ async function fetchApplications() {
 
 <template>
   <div class="container">
-    <h1>e-Gov 申請状況チェック</h1>
+    <div class="header">
+      <h1>e-Gov 申請状況チェック</h1>
+      <NuxtLink to="/documents" class="btn btn-secondary">
+        公文書ビューア
+      </NuxtLink>
+    </div>
 
     <div v-if="!isAuthenticated" class="login-section">
       <p>e-Govアカウントでログインして申請状況を確認できます。</p>
@@ -161,9 +166,15 @@ body {
   padding: 2rem 1rem;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
 h1 {
   font-size: 1.5rem;
-  margin-bottom: 1.5rem;
   color: #1a365d;
 }
 
