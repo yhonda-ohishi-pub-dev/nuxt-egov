@@ -5,14 +5,13 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
-  ssr: false,
-  app: {
-    baseURL: '/nuxt-egov/',
+  nitro: {
+    preset: 'cloudflare_module',
   },
   runtimeConfig: {
+    egovClientSecret: '',
     public: {
       egovClientId: '',
-      egovClientSecret: '',
       egovRedirectUri: '',
       egovAuthBase: 'https://account2.sbx.e-gov.go.jp/auth',
       egovApiBase: 'https://api2.sbx.e-gov.go.jp/shinsei/v2',

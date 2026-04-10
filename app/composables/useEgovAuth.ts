@@ -11,7 +11,6 @@ interface TokenResponse {
 export function useEgovAuth() {
   const config = useRuntimeConfig()
   const authBase = config.public.egovAuthBase as string
-  const apiBase = config.public.egovApiBase as string
 
   const accessToken = useState<string | null>('egov_access_token', () => null)
   const refreshToken = useState<string | null>('egov_refresh_token', () => null)
@@ -52,33 +51,19 @@ export function useEgovAuth() {
       throw new Error('Code verifier not found')
     }
 
-    const clientId = config.public.egovClientId as string
-    const clientSecret = config.public.egovClientSecret as string
     const redirectUri = config.public.egovRedirectUri as string
-    const basicAuth = btoa(`${clientId}:${clientSecret}`)
 
-    const res = await fetch(`${authBase}/token`, {
+    const data = await $fetch<TokenResponse>('/api/egov/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${basicAuth}`,
-      },
-      body: new URLSearchParams({
+      body: {
         grant_type: 'authorization_code',
         code,
         redirect_uri: redirectUri,
         code_verifier: codeVerifier,
-      }),
+      },
     })
 
-    if (!res.ok) {
-      const error = await res.text()
-      throw new Error(`Token request failed: ${res.status} ${error}`)
-    }
-
-    const data: TokenResponse = await res.json()
     setTokens(data)
-
     sessionStorage.removeItem('egov_code_verifier')
     sessionStorage.removeItem('egov_state')
   }
@@ -86,28 +71,14 @@ export function useEgovAuth() {
   async function refreshAccessToken() {
     if (!refreshToken.value) throw new Error('No refresh token')
 
-    const clientId = config.public.egovClientId as string
-    const clientSecret = config.public.egovClientSecret as string
-    const basicAuth = btoa(`${clientId}:${clientSecret}`)
-
-    const res = await fetch(`${authBase}/token`, {
+    const data = await $fetch<TokenResponse>('/api/egov/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${basicAuth}`,
-      },
-      body: new URLSearchParams({
+      body: {
         grant_type: 'refresh_token',
         refresh_token: refreshToken.value,
-      }),
+      },
     })
 
-    if (!res.ok) {
-      logout()
-      throw new Error('Token refresh failed')
-    }
-
-    const data: TokenResponse = await res.json()
     setTokens(data)
   }
 
@@ -129,32 +100,12 @@ export function useEgovAuth() {
     }
     if (!accessToken.value) throw new Error('Not authenticated')
 
-    const url = new URL(`${apiBase}${path}`)
-    if (params) {
-      for (const [k, v] of Object.entries(params)) {
-        url.searchParams.set(k, v)
-      }
-    }
-
-    const res = await fetch(url.toString(), {
+    return $fetch<T>(`/api/egov${path}`, {
+      params,
       headers: {
         Authorization: `Bearer ${accessToken.value}`,
       },
     })
-
-    if (res.status === 401) {
-      await refreshAccessToken()
-      const retry = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${accessToken.value}`,
-        },
-      })
-      if (!retry.ok) throw new Error(`API error: ${retry.status}`)
-      return retry.json()
-    }
-
-    if (!res.ok) throw new Error(`API error: ${res.status}`)
-    return res.json()
   }
 
   return {
