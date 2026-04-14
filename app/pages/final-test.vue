@@ -156,6 +156,10 @@ function appendLog(proc: TestProcedure, r: ProcedureResult) {
   errorLog.value = JSON.stringify(entry, null, 2) + '\n---\n' + errorLog.value
 }
 
+function copyErrorLog() {
+  navigator.clipboard.writeText(errorLog.value)
+}
+
 // 編集可能なテストデータ（localStorageで永続化）
 const testData = reactive({
   氏名: 'テスト\u3000太郎',
@@ -392,6 +396,8 @@ async function submitOne(proc: TestProcedure) {
         applyXml = applyXml.replace(/<年><\/年>/g, '<年>8</年>')
         applyXml = applyXml.replace(/<月><\/月>/g, `<月>${now.getMonth() + 1}</月>`)
         applyXml = applyXml.replace(/<日><\/日>/g, `<日>${now.getDate()}</日>`)
+        // 在留期間は非必須だが年月日が入ると日付チェックされる → 西暦4桁に修正
+        applyXml = applyXml.replace(/<在留期間>([\s\S]*?)<\/在留期間>/g, (m) => m.replace(/<年>8<\/年>/, `<年>${now.getFullYear()}</年>`))
         console.log(`[${proc.proc_id}] apply filled ${Object.keys(testValues).length} fields`)
         zip.file(applyPath, applyXml)
       }
@@ -642,6 +648,9 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
 
       <!-- エラーログ -->
       <div v-if="errorLog" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 4px;">
+          <button @click="copyErrorLog" style="padding: 4px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">コピー</button>
+        </div>
         <textarea v-model="errorLog" readonly style="width: 100%; height: 200px; font-family: monospace; font-size: 11px; padding: 8px; border: 1px solid #dc3545; border-radius: 4px; background: #fff5f5; resize: vertical;" />
       </div>
 
