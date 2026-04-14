@@ -1,5 +1,6 @@
 {
   "name": "egov-check",
+  "account_id": "24b45709d060d957340180e995f0d373",
   "main": ".output/server/index.mjs",
   "compatibility_date": "2024-11-01",
   "compatibility_flags": ["nodejs_compat"],
