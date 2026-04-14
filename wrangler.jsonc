@@ -5,5 +5,16 @@
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".output/public"
+  },
+  "routes": [
+    { "pattern": "egov-check.ippoan.org", "custom_domain": true }
+  ],
+  "env": {
+    "staging": {
+      "name": "egov-check-staging",
+      "routes": [
+        { "pattern": "egov-check-staging.ippoan.org", "custom_domain": true }
+      ]
+    }
   }
 }
