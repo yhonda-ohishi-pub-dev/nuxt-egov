@@ -20,5 +20,5 @@ jobs:
       has_tests: false
       has_deploy: true
       npm_scope: '@ippoan'
-      post_install_script: 'npx nuxt prepare'
+      post_install_script: 'rm -rf node_modules/.cache .nuxt && npx nuxt prepare'
     secrets: inherit
