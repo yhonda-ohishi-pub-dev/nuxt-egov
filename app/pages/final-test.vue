@@ -76,11 +76,21 @@ async function submitOne(proc: TestProcedure) {
           xml = xml.replace(new RegExp(`<${tag}/>`, 'g'), `<${tag}>${value}</${tag}>`)
           xml = xml.replace(new RegExp(`<${tag}></${tag}>`, 'g'), `<${tag}>${value}</${tag}>`)
         }
-        // 添付書類属性情報: 添付種別を「別送」にして提出情報を「0」(未提出)にする
-        // これにより添付ファイルなしで申請可能
-        xml = xml.replace(/<添付種別\/>/g, '<添付種別>別送</添付種別>')
-        xml = xml.replace(/<提出情報\/>/g, '<提出情報>0</提出情報>')
-        xml = xml.replace(/<添付書類名称\/>/g, '<添付書類名称>テスト添付書類</添付書類名称>')
+        // 添付書類属性情報がスケルトンにない場合、</管理情報>の後に挿入
+        // 添付種別=別送、提出情報=0(未提出)で添付ファイルなしで送信可能
+        if (!xml.includes('<添付書類属性情報>')) {
+          const attachBlock = `
+\t\t\t\t\t<添付書類属性情報>
+\t\t\t\t\t\t<添付種別>別送</添付種別>
+\t\t\t\t\t\t<添付書類名称>テスト添付書類１</添付書類名称>
+\t\t\t\t\t\t<添付書類ファイル名称/>
+\t\t\t\t\t\t<提出情報>0</提出情報>
+\t\t\t\t\t</添付書類属性情報>`
+          xml = xml.replace('</管理情報>', '</管理情報>' + attachBlock)
+        } else {
+          xml = xml.replace(/<添付種別\/>/g, '<添付種別>別送</添付種別>')
+          xml = xml.replace(/<提出情報\/>/g, '<提出情報>0</提出情報>')
+        }
         // 空タグはそのまま残す（不要な値を入れない）
         zip.file(kouseiPath, xml)
       }
