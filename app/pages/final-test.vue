@@ -218,7 +218,9 @@ async function submitOne(proc: TestProcedure) {
         const checkXml = await checkFile.async('string')
         const testValues = buildTestValuesFromCheck(checkXml)
         for (const [tag, value] of Object.entries(testValues)) {
-          applyXml = applyXml.replace(new RegExp(`<${tag}></${tag}>`, 'g'), `<${tag}>${value}</${tag}>`)
+          // check.xml の / 区切りはネスト構造のパス表現 — 最後のセグメントが実際のタグ名
+          const actualTag = tag.includes('/') ? tag.split('/').pop()! : tag
+          applyXml = applyXml.replace(new RegExp(`<${actualTag}></${actualTag}>`, 'g'), `<${actualTag}>${value}</${actualTag}>`)
         }
         // 年/月/日はネスト構造で複数存在するため、buildTestValuesでは1回しか置換されない
         // 残った空の年月日タグを全て埋める
