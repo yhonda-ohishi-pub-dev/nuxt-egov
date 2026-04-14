@@ -298,7 +298,12 @@ async function submitOne(proc: TestProcedure, clearLog = false) {
           xml = xml.replace(new RegExp(`<${tag}/>`, 'g'), `<${tag}>${value}</${tag}>`)
           xml = xml.replace(new RegExp(`<${tag}></${tag}>`, 'g'), `<${tag}>${value}</${tag}>`)
         }
-        // WriteAppli(configFiles[1])には申請書属性情報・添付書類属性情報・提出先情報を入れない
+        // WriteAppli: 申請書属性情報を挿入（申請書作成型では必要）
+        if (fi0 && !xml.includes('<申請書属性情報>')) {
+          const formBlock = `<申請書属性情報><申請書様式ID>${fi0.form_id}</申請書様式ID><申請書様式バージョン>${String(fi0.form_version).padStart(4, '0')}</申請書様式バージョン><申請書様式名称>${fi0.form_name}</申請書様式名称><申請書ファイル名称>${fi0.apply_file_name}</申請書ファイル名称></申請書属性情報>`
+          xml = xml.replace('</構成情報>', formBlock + '</構成情報>')
+        }
+        // 添付書類属性情報・提出先情報は入れない
         zip.file(writeAppliPath, xml)
       }
 
@@ -322,7 +327,11 @@ async function submitOne(proc: TestProcedure, clearLog = false) {
           xml = xml.replace(new RegExp(`<${tag}/>`, 'g'), `<${tag}>${value}</${tag}>`)
           xml = xml.replace(new RegExp(`<${tag}></${tag}>`, 'g'), `<${tag}>${value}</${tag}>`)
         }
-        // 個人情報・添付書類属性情報・提出先情報は入れない
+        // SignAttach: 申請書属性情報を挿入（添付書類署名型では申請書XMLへの参照が必要）
+        if (fi0 && !xml.includes('<申請書属性情報>')) {
+          const formBlock = `<申請書属性情報><申請書様式ID>${fi0.form_id}</申請書様式ID><申請書様式バージョン>${String(fi0.form_version).padStart(4, '0')}</申請書様式バージョン><申請書様式名称>${fi0.form_name}</申請書様式名称><申請書ファイル名称>${fi0.apply_file_name}</申請書ファイル名称></申請書属性情報>`
+          xml = xml.replace('</構成情報>', formBlock + '</構成情報>')
+        }
         zip.file(signAttachPath, xml)
       }
     } else {
