@@ -147,6 +147,9 @@ const delay = ref(2000)
 const showSettings = ref(false)
 const errorLog = ref('')
 
+// errorLogをlocalStorageに永続化（消えても復元可能）
+watch(errorLog, (v) => { if (v) localStorage.setItem('egov_error_log', v) })
+
 function appendLog(proc: TestProcedure, r: ProcedureResult) {
   const entry: Record<string, unknown> = { no: proc.no, proc_id: proc.proc_id, git: gitCommit, status: r.status }
   if (r.arrive_id) entry.arrive_id = r.arrive_id
@@ -185,6 +188,8 @@ onMounted(() => {
   if (savedData) {
     Object.assign(testData, JSON.parse(savedData))
   }
+  const savedLog = localStorage.getItem('egov_error_log')
+  if (savedLog) errorLog.value = savedLog
   loadTestPfx()
 })
 
@@ -759,7 +764,7 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
             <td style="border: 1px solid #dee2e6; padding: 4px; font-family: monospace; font-size: 11px;">{{ getResult(proc.proc_id).send_number ?? '' }}</td>
             <td style="border: 1px solid #dee2e6; padding: 4px; text-align: center;">
               <button
-                @click="submitOne(proc)"
+                @click="submitOne(proc, true)"
                 :disabled="running || getResult(proc.proc_id).status === 'done'"
                 style="padding: 2px 8px; font-size: 12px; cursor: pointer;"
               >
@@ -808,7 +813,7 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
             <td style="border: 1px solid #dee2e6; padding: 4px; font-family: monospace; font-size: 11px;">{{ getResult(proc.proc_id).send_number ?? '' }}</td>
             <td style="border: 1px solid #dee2e6; padding: 4px; text-align: center;">
               <button
-                @click="submitOne(proc)"
+                @click="submitOne(proc, true)"
                 :disabled="running || getResult(proc.proc_id).status === 'done'"
                 style="padding: 2px 8px; font-size: 12px; cursor: pointer;"
               >
