@@ -200,7 +200,8 @@ function getResult(procId: string): ProcedureResult {
   return results.value.get(procId) ?? { proc_id: procId, status: 'pending' }
 }
 
-async function submitOne(proc: TestProcedure) {
+async function submitOne(proc: TestProcedure, clearLog = false) {
+  if (clearLog) errorLog.value = ''
   const r: ProcedureResult = { proc_id: proc.proc_id, status: 'skeleton' }
   results.value.set(proc.proc_id, r)
 
@@ -734,7 +735,7 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
             <td style="border: 1px solid #dee2e6; padding: 4px; font-family: monospace; font-size: 11px;">{{ getResult(proc.proc_id).send_number ?? '' }}</td>
             <td style="border: 1px solid #dee2e6; padding: 4px; text-align: center;">
               <button
-                @click="submitOne(proc)"
+                @click="submitOne(proc, true)"
                 :disabled="running || getResult(proc.proc_id).status === 'done'"
                 style="padding: 2px 8px; font-size: 12px; cursor: pointer;"
               >
@@ -744,7 +745,7 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
           </tr>
           <tr v-if="getResult(proc.proc_id).status === 'error'">
             <td colspan="8" style="border: 1px solid #dee2e6; padding: 4px 8px; background: #fff5f5; color: #dc3545; font-size: 12px; word-break: break-all; white-space: pre-wrap; cursor: pointer;" @click="copyResult(proc)">
-              {{ getResult(proc.proc_id).error }}
+              <span style="color: #999; font-size: 10px;">[{{ gitCommit }}]</span> {{ getResult(proc.proc_id).error }}
             </td>
           </tr>
           </template>
@@ -783,7 +784,7 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
             <td style="border: 1px solid #dee2e6; padding: 4px; font-family: monospace; font-size: 11px;">{{ getResult(proc.proc_id).send_number ?? '' }}</td>
             <td style="border: 1px solid #dee2e6; padding: 4px; text-align: center;">
               <button
-                @click="submitOne(proc)"
+                @click="submitOne(proc, true)"
                 :disabled="running || getResult(proc.proc_id).status === 'done'"
                 style="padding: 2px 8px; font-size: 12px; cursor: pointer;"
               >
@@ -793,7 +794,7 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
           </tr>
           <tr v-if="getResult(proc.proc_id).status === 'error'">
             <td colspan="8" style="border: 1px solid #dee2e6; padding: 4px 8px; background: #fff5f5; color: #dc3545; font-size: 12px; word-break: break-all; white-space: pre-wrap; cursor: pointer;" @click="copyResult(proc)">
-              {{ getResult(proc.proc_id).error }}
+              <span style="color: #999; font-size: 10px;">[{{ gitCommit }}]</span> {{ getResult(proc.proc_id).error }}
             </td>
           </tr>
           </template>
