@@ -503,6 +503,7 @@ function copyResult(proc: TestProcedure) {
 async function runAll() {
   running.value = true
   progress.value = 0
+  errorLog.value = ''
 
   const pending = TEST_PROCEDURES.filter(p => getResult(p.proc_id).status !== 'done')
 
