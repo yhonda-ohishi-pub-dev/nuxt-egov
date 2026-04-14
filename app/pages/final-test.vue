@@ -298,12 +298,7 @@ async function submitOne(proc: TestProcedure, clearLog = false) {
           xml = xml.replace(new RegExp(`<${tag}/>`, 'g'), `<${tag}>${value}</${tag}>`)
           xml = xml.replace(new RegExp(`<${tag}></${tag}>`, 'g'), `<${tag}>${value}</${tag}>`)
         }
-        // 申請書属性情報を挿入（ただし申請種別が「申請書送信」の場合は不可）
-        if (fi0 && !xml.includes('<申請書属性情報>') && !xml.includes('申請書送信')) {
-          const formBlock = `<申請書属性情報><申請書様式ID>${fi0.form_id}</申請書様式ID><申請書様式バージョン>${String(fi0.form_version).padStart(4, '0')}</申請書様式バージョン><申請書様式名称>${fi0.form_name}</申請書様式名称><申請書ファイル名称>${fi0.apply_file_name}</申請書ファイル名称></申請書属性情報>`
-          xml = xml.replace('</構成情報>', formBlock + '</構成情報>')
-        }
-        // 添付書類属性情報・提出先情報は入れない
+        // WriteAppli(configFiles[1])には申請書属性情報・添付書類属性情報・提出先情報を入れない
         zip.file(writeAppliPath, xml)
       }
 
@@ -417,18 +412,19 @@ async function submitOne(proc: TestProcedure, clearLog = false) {
           if (content.trim()) return m // 既に値がある
           const t = tag.toLowerCase()
           let val = ''
-          if (t.includes('配達局番号')) val = '100'
+          if (t.includes('scriptcheck')) val = '' // scriptCheckは埋めない
+          else if (t.includes('配達局番号')) val = '100'
           else if (t.includes('町域番号')) val = '0014'
           else if (t.includes('市外局番')) val = '03'
           else if (t.includes('市内局番')) val = '1234'
           else if (t.includes('加入者番号')) val = '5678'
-          else if (t.includes('所在地') || t.includes('住所')) val = '東京都千代田区永田町'
-          else if (t.includes('名称') || t.includes('事業所名')) val = 'テスト事業所'
-          else if (t.includes('氏名')) val = 'テスト太郎'
           else if (t.includes('カナ住所') || t.includes('住所カナ')) val = 'トウキョウトチヨダクナガタチョウ'
           else if (t.includes('カナ名称') || t.includes('名称カナ')) val = 'テスト'
           else if (t.includes('漢字住所')) val = '東京都千代田区永田町'
           else if (t.includes('漢字名称')) val = 'テスト事業所'
+          else if (t.includes('所在地') || (t.includes('住所') && !t.includes('届') && !t.includes('変更'))) val = '東京都千代田区永田町'
+          else if (t.includes('名称') || t.includes('事業所名')) val = 'テスト事業所'
+          else if (t.includes('氏名')) val = 'テスト太郎'
           else if (t.includes('見込額') || t.includes('賃金')) val = '100000'
           else if (t.includes('チェックボックス') || t.includes('チェック')) val = '1'
           if (!val) return m
