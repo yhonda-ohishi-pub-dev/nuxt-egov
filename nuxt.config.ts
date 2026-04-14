@@ -1,3 +1,10 @@
+import { execSync } from 'node:child_process'
+
+const gitCommit = (() => {
+  try { return execSync('git rev-parse --short HEAD').toString().trim() }
+  catch { return 'unknown' }
+})()
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
@@ -7,6 +14,9 @@ export default defineNuxtConfig({
   },
   nitro: {
     preset: 'cloudflare_module',
+  },
+  appConfig: {
+    gitCommit,
   },
   runtimeConfig: {
     egovClientSecret: '',
