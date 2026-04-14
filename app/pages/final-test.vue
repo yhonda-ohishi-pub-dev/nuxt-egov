@@ -156,6 +156,10 @@ function appendLog(proc: TestProcedure, r: ProcedureResult) {
   errorLog.value = JSON.stringify(entry, null, 2) + '\n---\n' + errorLog.value
 }
 
+function copyErrorLog() {
+  navigator.clipboard.writeText(errorLog.value)
+}
+
 // 編集可能なテストデータ（localStorageで永続化）
 const testData = reactive({
   氏名: 'テスト\u3000太郎',
@@ -645,7 +649,7 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
       <!-- エラーログ -->
       <div v-if="errorLog" style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: flex-end; margin-bottom: 4px;">
-          <button @click="navigator.clipboard.writeText(errorLog)" style="padding: 4px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">コピー</button>
+          <button @click="copyErrorLog" style="padding: 4px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">コピー</button>
         </div>
         <textarea v-model="errorLog" readonly style="width: 100%; height: 200px; font-family: monospace; font-size: 11px; padding: 8px; border: 1px solid #dc3545; border-radius: 4px; background: #fff5f5; resize: vertical;" />
       </div>
