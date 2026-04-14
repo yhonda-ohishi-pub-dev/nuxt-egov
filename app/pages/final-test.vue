@@ -51,12 +51,15 @@ function buildTestValuesFromCheck(checkXml: string): Record<string, string> {
     const maxLen = maxLenEl ? Number(maxLenEl.textContent) : 10
     const intDigitEl = item.querySelector('intDigit > number')
     const intDigit = intDigitEl ? Number(intDigitEl.textContent) : 0
+    const isEqual = item.querySelector('char > range > equal') !== null
 
     // タグ名パターンで値を決定（/区切りの場合は最後のセグメントで判定）
     const lastSeg = tag.includes('/') ? tag.split('/').pop()! : tag
     const t = lastSeg.toLowerCase()
-    if (t.includes('年') && !t.includes('氏名') && !t.includes('名称')) {
-      values[tag] = isNum ? String(now.getFullYear() % 100) : String(now.getFullYear())
+    if (t.includes('年号')) {
+      values[tag] = '令和'
+    } else if (t.includes('年') && !t.includes('氏名') && !t.includes('名称')) {
+      values[tag] = '8'
     } else if (t.includes('月') && !t.includes('氏名') && !t.includes('名称')) {
       values[tag] = String(now.getMonth() + 1)
     } else if (t.includes('日') && !t.includes('氏名') && !t.includes('名称')) {
@@ -75,6 +78,9 @@ function buildTestValuesFromCheck(checkXml: string): Record<string, string> {
       values[tag] = 'テスト　太郎'
     } else if (t.includes('記号')) {
       values[tag] = isNum ? '1' : 'ア'
+    } else if (t.includes('番号') && maxLenEl && isEqual) {
+      // char/range/number + equal → exact length required
+      values[tag] = '1'.repeat(maxLen)
     } else if (t.includes('番号') && isNum) {
       values[tag] = '1'.padStart(intDigit || 1, '0').substring(0, intDigit || 5)
     } else if (t.includes('番号')) {
@@ -294,6 +300,19 @@ async function submitOne(proc: TestProcedure) {
           zip.file(kouseiPath, xml)
         }
       }
+
+      // 納付方法が必要な手続（手数料納付が期待状態に含まれる場合）
+      if (proc.expected_state.includes('手数料納付')) {
+        const mainKouseiPath = `${proc.proc_id}/${configFiles[0]}`
+        const mainKouseiFile = zip.file(mainKouseiPath)
+        if (mainKouseiFile) {
+          let mainXml = await mainKouseiFile.async('string')
+          if (!mainXml.includes('<納付関連情報>')) {
+            mainXml = mainXml.replace('<法人番号>', '<納付関連情報><納付方法>1</納付方法><振込者氏名カナ>テストタロウ</振込者氏名カナ></納付関連情報>\n\t\t\t\t\t<法人番号>')
+            zip.file(mainKouseiPath, mainXml)
+          }
+        }
+      }
     }
 
     // 申請書XML: checkファイルから必須フィールドを解析し、テスト値を自動填入
@@ -314,7 +333,8 @@ async function submitOne(proc: TestProcedure) {
         // 年/月/日はネスト構造で複数存在するため、buildTestValuesでは1回しか置換されない
         // 残った空の年月日タグを全て埋める
         const now = new Date()
-        applyXml = applyXml.replace(/<年><\/年>/g, `<年>${now.getFullYear() % 100}</年>`)
+        applyXml = applyXml.replace(/<年号><\/年号>/g, '<年号>令和</年号>')
+        applyXml = applyXml.replace(/<年><\/年>/g, '<年>8</年>')
         applyXml = applyXml.replace(/<月><\/月>/g, `<月>${now.getMonth() + 1}</月>`)
         applyXml = applyXml.replace(/<日><\/日>/g, `<日>${now.getDate()}</日>`)
         console.log(`[${proc.proc_id}] apply filled ${Object.keys(testValues).length} fields`)
