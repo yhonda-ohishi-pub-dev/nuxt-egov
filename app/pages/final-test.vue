@@ -5,6 +5,11 @@ import { TEST_PROCEDURES, type TestProcedure } from '~/utils/finalTestProcedures
 
 const { isAuthenticated, startLogin, apiFetch, getClient } = useEgovAuth()
 
+// 半角英数記号→全角変換（e-Gov XMLは全角のみ許可のフィールドがある）
+function toFullWidth(s: string): string {
+  return s.replace(/[\x21-\x7E]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0))
+}
+
 interface ProcedureResult {
   proc_id: string
   status: 'pending' | 'skeleton' | 'submitting' | 'done' | 'error'
@@ -82,10 +87,10 @@ async function submitOne(proc: TestProcedure) {
       申請種別: '新規申請',
       氏名: testData.氏名,
       氏名フリガナ: testData.氏名フリガナ,
-      郵便番号: testData.郵便番号,
-      住所: testData.住所,
+      郵便番号: toFullWidth(testData.郵便番号),
+      住所: toFullWidth(testData.住所),
       住所フリガナ: testData.住所フリガナ,
-      電話番号: testData.電話番号,
+      電話番号: toFullWidth(testData.電話番号),
       電子メールアドレス: testData.電子メールアドレス,
       法人名: testData.法人名,
     }
