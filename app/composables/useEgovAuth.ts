@@ -1,5 +1,5 @@
-import { EgovClient, generatePKCE, buildAuthorizationUrl } from 'egov-shinsei-sdk'
-import type { TokenResponse } from 'egov-shinsei-sdk'
+import { EgovClient, generatePKCE, buildAuthorizationUrl } from '@ippoan/egov-shinsei-sdk'
+import type { TokenResponse } from '@ippoan/egov-shinsei-sdk'
 
 export function useEgovAuth() {
   const config = useRuntimeConfig()

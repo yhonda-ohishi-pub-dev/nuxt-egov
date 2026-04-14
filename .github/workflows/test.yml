@@ -18,5 +18,6 @@ jobs:
       has_tests: false
       has_deploy: false
       has_staging_deploy: false
+      npm_scope: '@ippoan'
       post_install_script: 'npx nuxt prepare'
     secrets: inherit
