@@ -10,7 +10,7 @@ const DIGEST_ALGO = 'http://www.w3.org/2001/04/xmlenc#sha256'
 /**
  * XML-DSig 署名を生成し、<署名情報> ブロックの XML 文字列を返す
  */
-export function createSignatureBlock(options: SignatureOptions, idSuffix = ''): string {
+export function createSignatureBlock(options: SignatureOptions, secondsOffset = 0): string {
   const { pfx, references } = options
 
   // 1. 各 Reference の DigestValue を計算
@@ -26,15 +26,14 @@ export function createSignatureBlock(options: SignatureOptions, idSuffix = ''): 
   const canonicalSignedInfo = canonicalize(signedInfoXml)
   const signatureValue = rsaSha256Sign(canonicalSignedInfo, pfx.privateKey)
 
-  // 4. Signature Id = yyyyMMddHHmmss + suffix（連署時にユニーク化）
-  const now = new Date()
+  // 4. Signature Id = yyyyMMddHHmmss（14桁固定、連署時は秒をオフセットしてユニーク化）
+  const now = new Date(Date.now() + secondsOffset * 1000)
   const id = now.getFullYear().toString()
     + String(now.getMonth() + 1).padStart(2, '0')
     + String(now.getDate()).padStart(2, '0')
     + String(now.getHours()).padStart(2, '0')
     + String(now.getMinutes()).padStart(2, '0')
     + String(now.getSeconds()).padStart(2, '0')
-    + idSuffix
 
   // 5. 完全な ds:Signature XML を組立て
   return buildFullSignatureXml(id, signedInfoXml, signatureValue, pfx.certificateBase64)
@@ -95,8 +94,7 @@ export function signKousei(
 
   // 各署名者で Signature ブロックを生成し、1つの <署名情報> にまとめる
   const signatureBlocks = signers.map((signerPfx, i) => {
-    const suffix = signers.length > 1 ? String(i + 1) : ''
-    const block = createSignatureBlock({ pfx: signerPfx, references }, suffix)
+    const block = createSignatureBlock({ pfx: signerPfx, references }, i)
     if (i === 0) return block
     // 2つ目以降: <署名情報>...</署名情報> のラッパーを除去して Signature 要素だけ返す
     return block.replace(/^<署名情報>/, '').replace(/<\/署名情報>$/, '')
