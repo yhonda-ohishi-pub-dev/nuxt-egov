@@ -42,9 +42,9 @@ function buildTestValuesFromCheck(checkXml: string): Record<string, string> {
     } else if (t.includes('郵便番号') && t.includes('親')) {
       values[tag] = '100'
     } else if (t.includes('郵便番号') && t.includes('子')) {
-      values[tag] = '0001'
+      values[tag] = '0014'
     } else if (t.includes('所在地') || t.includes('住所')) {
-      values[tag] = isFullWidth ? 'テスト所在地' : 'テスト所在地'
+      values[tag] = '東京都千代田区永田町'
     } else if (t.includes('名称') || t.includes('事業所名')) {
       values[tag] = isFullWidth ? 'テスト事業所' : 'テスト事業所'
     } else if (t.includes('氏名') && t.includes('カナ')) {
@@ -90,9 +90,9 @@ const showSettings = ref(false)
 const testData = reactive({
   氏名: 'テスト\u3000太郎',
   氏名フリガナ: 'テスト\u3000タロウ',
-  郵便番号: '1000001',
-  住所: '東京都千代田区千代田1-1',
-  住所フリガナ: 'トウキョウトチヨダクチヨダ',
+  郵便番号: '1000014',
+  住所: '東京都千代田区永田町１丁目７番１号',
+  住所フリガナ: 'トウキョウトチヨダクナガタチョウ',
   電話番号: '03-1234-5678',
   電子メールアドレス: 'test@example.com',
   法人名: 'テスト株式会社',
@@ -148,10 +148,10 @@ async function submitOne(proc: TestProcedure) {
       申請種別: '新規申請',
       氏名: testData.氏名,
       氏名フリガナ: testData.氏名フリガナ,
-      郵便番号: toFullWidth(testData.郵便番号),
-      住所: toFullWidth(testData.住所),
+      郵便番号: testData.郵便番号,
+      住所: testData.住所,
       住所フリガナ: testData.住所フリガナ,
-      電話番号: toFullWidth(testData.電話番号),
+      電話番号: testData.電話番号,
       電子メールアドレス: testData.電子メールアドレス,
       法人名: testData.法人名,
     }
@@ -199,6 +199,12 @@ async function submitOne(proc: TestProcedure) {
         for (const [tag, value] of Object.entries(testValues)) {
           applyXml = applyXml.replace(new RegExp(`<${tag}></${tag}>`, 'g'), `<${tag}>${value}</${tag}>`)
         }
+        // 年/月/日はネスト構造で複数存在するため、buildTestValuesでは1回しか置換されない
+        // 残った空の年月日タグを全て埋める
+        const now = new Date()
+        applyXml = applyXml.replace(/<年><\/年>/g, `<年>${now.getFullYear() % 100}</年>`)
+        applyXml = applyXml.replace(/<月><\/月>/g, `<月>${now.getMonth() + 1}</月>`)
+        applyXml = applyXml.replace(/<日><\/日>/g, `<日>${now.getDate()}</日>`)
         console.log(`[${proc.proc_id}] apply filled ${Object.keys(testValues).length} fields`)
         zip.file(applyPath, applyXml)
       }
@@ -220,6 +226,7 @@ async function submitOne(proc: TestProcedure) {
       },
       headers: {
         Authorization: `Bearer ${useEgovAuth().accessToken.value}`,
+        'X-eGovAPI-Trial': 'true',
       },
     })
 
