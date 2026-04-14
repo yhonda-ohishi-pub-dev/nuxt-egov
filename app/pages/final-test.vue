@@ -145,6 +145,16 @@ const progress = ref(0)
 const currentProc = ref('')
 const delay = ref(2000)
 const showSettings = ref(false)
+const errorLog = ref('')
+
+function appendLog(proc: TestProcedure, r: ProcedureResult) {
+  const entry: Record<string, unknown> = { no: proc.no, proc_id: proc.proc_id, git: gitCommit, status: r.status }
+  if (r.arrive_id) entry.arrive_id = r.arrive_id
+  if (r.error) try { entry.error = JSON.parse(r.error) } catch { entry.error = r.error }
+  if (r.debugKouseiXml) entry.kouseiXml = r.debugKouseiXml
+  if (r.debugApplyXml) entry.applyXml = r.debugApplyXml
+  errorLog.value = JSON.stringify(entry, null, 2) + '\n---\n' + errorLog.value
+}
 
 // 編集可能なテストデータ（localStorageで永続化）
 const testData = reactive({
@@ -464,6 +474,7 @@ async function submitOne(proc: TestProcedure) {
   }
 
   results.value.set(proc.proc_id, { ...r })
+  appendLog(proc, r)
   saveResults()
 }
 
@@ -627,6 +638,11 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
         <span style="margin-left: auto;">
           完了: {{ doneCount }} / {{ TEST_PROCEDURES.length }}
         </span>
+      </div>
+
+      <!-- エラーログ -->
+      <div v-if="errorLog" style="margin-bottom: 20px;">
+        <textarea v-model="errorLog" readonly style="width: 100%; height: 200px; font-family: monospace; font-size: 11px; padding: 8px; border: 1px solid #dc3545; border-radius: 4px; background: #fff5f5; resize: vertical;" />
       </div>
 
       <!-- 申請データ設定パネル -->
