@@ -130,7 +130,14 @@ interface ProcedureResult {
   arrive_id?: string
   send_number?: string
   error?: string
+  /** デバッグ用: 送信したkousei.xmlの内容 */
+  debugKouseiXml?: string
+  /** デバッグ用: 送信した申請書XMLの内容 */
+  debugApplyXml?: string
 }
+
+const appConfig = useAppConfig()
+const gitCommit = (appConfig as any).gitCommit || 'dev'
 
 const results = ref<Map<string, ProcedureResult>>(new Map())
 const running = ref(false)
@@ -406,6 +413,12 @@ async function submitOne(proc: TestProcedure) {
       }
     }
 
+    // デバッグ: 送信するXMLを保存
+    const mainKousei = zip.file(`${proc.proc_id}/${configFiles[0]}`)
+    if (mainKousei) r.debugKouseiXml = await mainKousei.async('string')
+    const mainApply = zip.file(`${proc.proc_id}/${skeleton.results.file_info[0]?.apply_file_name}`)
+    if (mainApply) r.debugApplyXml = await mainApply.async('string')
+
     const newZipBase64 = await zip.generateAsync({ type: 'base64' })
 
     // 3. 申請送信
@@ -456,7 +469,10 @@ async function submitOne(proc: TestProcedure) {
 
 function copyResult(proc: TestProcedure) {
   const r = getResult(proc.proc_id)
-  const data = { no: proc.no, proc_id: proc.proc_id, name: proc.name, format: proc.format, status: r.status, arrive_id: r.arrive_id, error: r.error ? JSON.parse(r.error) : undefined }
+  const data: Record<string, unknown> = { no: proc.no, proc_id: proc.proc_id, name: proc.name, format: proc.format, status: r.status, arrive_id: r.arrive_id, git: gitCommit }
+  if (r.error) try { data.error = JSON.parse(r.error) } catch { data.error = r.error }
+  if (r.debugKouseiXml) data.kouseiXml = r.debugKouseiXml
+  if (r.debugApplyXml) data.applyXml = r.debugApplyXml
   navigator.clipboard.writeText(JSON.stringify(data, null, 2))
 }
 
@@ -536,7 +552,7 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
 
 <template>
   <div style="max-width: 1200px; margin: 0 auto; padding: 20px; font-family: sans-serif;">
-    <h1>最終確認試験 - 申請送信</h1>
+    <h1>最終確認試験 - 申請送信 <span style="font-size: 12px; color: #6c757d; font-weight: normal;">{{ gitCommit }}</span></h1>
 
     <div v-if="!isAuthenticated" style="padding: 20px; background: #fff3cd; border-radius: 8px; margin-bottom: 20px;">
       <p>e-Govにログインしてください</p>
