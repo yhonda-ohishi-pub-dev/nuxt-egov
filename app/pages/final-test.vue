@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EgovClient } from 'egov-shinsei-sdk'
+import type { EgovClient } from '@ippoan/egov-shinsei-sdk'
 import { TEST_PROCEDURES, type TestProcedure } from '~/utils/finalTestProcedures'
 
 const { isAuthenticated, startLogin, apiFetch, getClient } = useEgovAuth()
@@ -82,7 +82,7 @@ async function runAll() {
   const pending = TEST_PROCEDURES.filter(p => getResult(p.proc_id).status !== 'done')
 
   for (let i = 0; i < pending.length; i++) {
-    await submitOne(pending[i])
+    await submitOne(pending[i]!)
     progress.value = Math.round(((i + 1) / pending.length) * 100)
     if (i < pending.length - 1) {
       await new Promise(r => setTimeout(r, delay.value))
