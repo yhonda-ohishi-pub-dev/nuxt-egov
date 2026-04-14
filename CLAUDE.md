@@ -55,3 +55,4 @@ e-Gov 電子申請サービスのチェックツール。Nuxt 4 + Cloudflare Wor
 ### 仕様書
 - `spec/` ディレクトリに格納（`.gitignore` 対象）
 - `egov-spec` スキルでダウンロード: `bash ~/.claude/skills/egov-spec/scripts/fetch-spec.sh . --all`
+<!-- trigger staging deploy 2026-04-14 -->
