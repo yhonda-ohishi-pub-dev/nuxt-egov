@@ -52,7 +52,7 @@ async function submitOne(proc: TestProcedure) {
 
     // 構成管理XML（kousei.xml）の必須フィールドのみに値を入れる（空タグはそのまま残す）
     const kouseiTestValues: Record<string, string> = {
-      受付行政機関ID: '100495',
+      受付行政機関ID: proc.proc_id.substring(0, 6),
       手続ID: proc.proc_id,
       手続名称: proc.name,
       申請種別: '新規申請',
