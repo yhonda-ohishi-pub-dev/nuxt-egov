@@ -31,3 +31,4 @@ spec/
 
 # Downloaded schema files
 kousei_schema/
+.wrangler/
