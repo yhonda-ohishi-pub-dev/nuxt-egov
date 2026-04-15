@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// build: 20260415
+const BUILD_TIME = '20260415-0430'
 import type { EgovClient } from '@ippoan/egov-shinsei-sdk'
 import JSZip from 'jszip'
 import { TEST_PROCEDURES, PROCS_WITH_DESTINATION, type TestProcedure } from '~/utils/finalTestProcedures'
@@ -91,7 +91,11 @@ function buildTestValuesFromCheck(checkXml: string): Record<string, string> {
       values[tag] = '1234'
     } else if (t.includes('加入者番号')) {
       values[tag] = '5678'
-    } else if (t.includes('所在地') || t.includes('住所')) {
+    } else if ((t.includes('フリガナ') || t.includes('カナ')) && (fullTag.includes('氏名') || t.includes('氏名'))) {
+      values[tag] = 'テストタロウ'
+    } else if (t.includes('カナ') || t.includes('フリガナ')) {
+      values[tag] = 'テストジギョウショ'
+    } else if ((t.includes('所在地') || t.includes('住所')) && !t.includes('フリガナ') && !t.includes('カナ')) {
       values[tag] = '東京都千代田区永田町'
     } else if (t.includes('あて先') || t.includes('宛先')) {
       values[tag] = 'テスト宛先'
@@ -100,19 +104,15 @@ function buildTestValuesFromCheck(checkXml: string): Record<string, string> {
     } else if (t.includes('種類') || t.includes('業種')) {
       values[tag] = 'その他'
     } else if (t.includes('名称') || t.includes('事業所名') || t.includes('事業の名称')) {
-      values[tag] = isFullWidth ? 'テスト事業所' : 'テスト事業所'
-    } else if ((t.includes('フリガナ') || t.includes('カナ')) && (fullTag.includes('氏名') || t.includes('氏名'))) {
-      values[tag] = 'テストタロウ'
-    } else if (t.includes('カナ') || t.includes('フリガナ')) {
-      values[tag] = 'テスト'
+      values[tag] = 'テスト事業所'
     } else if (t.includes('氏名')) {
       values[tag] = 'テスト太郎'
     } else if (t.includes('チェックボックス') || t.includes('チェック')) {
       values[tag] = '1'
     } else if (t.includes('記号')) {
       values[tag] = isNum ? '1' : 'ア'
-    } else if (t.includes('賃金') || t.includes('金額') || t.includes('見込額')) {
-      values[tag] = '100000'
+    } else if ((t.includes('賃金') || t.includes('金額') || t.includes('見込額')) && !t.includes('日')) {
+      values[tag] = maxLen >= 6 ? '100000' : '1'.repeat(Math.min(maxLen, 5))
     } else if (t.includes('番号') && maxLenEl && isEqual) {
       values[tag] = '1'.repeat(maxLen)
     } else if (t.includes('番号') && isNum) {
@@ -160,7 +160,7 @@ const errorLog = ref('')
 watch(errorLog, (v) => { if (v) localStorage.setItem('egov_error_log', v) })
 
 function appendLog(proc: TestProcedure, r: ProcedureResult) {
-  const entry: Record<string, unknown> = { no: proc.no, proc_id: proc.proc_id, git: gitCommit, status: r.status }
+  const entry: Record<string, unknown> = { no: proc.no, proc_id: proc.proc_id, git: gitCommit, build: BUILD_TIME, status: r.status }
   if (r.arrive_id) entry.arrive_id = r.arrive_id
   if (r.error) try { entry.error = JSON.parse(r.error) } catch { entry.error = r.error }
   if (r.debugKouseiXml) entry.kouseiXml = r.debugKouseiXml
@@ -408,7 +408,8 @@ async function submitOne(proc: TestProcedure, clearLog = false) {
           // check.xml の / 区切りはネスト構造のパス表現 — 最後のセグメントが実際のタグ名
           const actualTag = tag.includes('/') ? tag.split('/').pop()! : tag
           // XMLタグに属性（DispName等）が付いている場合にも対応、自己閉じタグも対応
-          applyXml = applyXml.replace(new RegExp(`<${actualTag}(\\s[^>]*)?>\\s*</${actualTag}>`, 'g'), (m, attrs) => `<${actualTag}${attrs || ''}>${value}</${actualTag}>`)
+          // 既に値が入っているタグも上書き（スケルトンのプリセット値がカタカナ制約等に違反する場合がある）
+          applyXml = applyXml.replace(new RegExp(`<${actualTag}(\\s[^>]*)?>([^<]*)</${actualTag}>`, 'g'), (m, attrs) => `<${actualTag}${attrs || ''}>${value}</${actualTag}>`)
           applyXml = applyXml.replace(new RegExp(`<${actualTag}(\\s[^>]*)?\\/>`, 'g'), (m, attrs) => `<${actualTag}${attrs || ''}>${value}</${actualTag}>`)
         }
         // 年/月/日はネスト構造で複数存在するため、buildTestValuesでは1回しか置換されない
@@ -449,6 +450,19 @@ async function submitOne(proc: TestProcedure, clearLog = false) {
           fallbackCount++
           return `<${tag}${attrs || ''}>${val}</${tag}>`
         })
+        // ポストプロセス: スケルトンにプリセットされた値の文字種修正
+        // カタカナ/フリガナフィールドに漢字が入っている場合はカタカナに置換
+        applyXml = applyXml.replace(/<([^<>]*(?:カタカナ|フリガナ)[^<>]*)>([^<]+)<\/\1>/g, (m, tag, val) => {
+          // 既にカタカナのみなら何もしない
+          if (/^[\u30A0-\u30FF\u3000\s]+$/.test(val)) return m
+          // 漢字/ひらがな混じりの場合はタグ名に基づいてカタカナ値を設定
+          const t = tag.toLowerCase()
+          if (t.includes('氏名')) return `<${tag}>テストタロウ</${tag}>`
+          if (t.includes('所在地') || t.includes('住所')) return `<${tag}>トウキョウトチヨダクナガタチョウ</${tag}>`
+          return `<${tag}>テストジギョウショ</${tag}>`
+        })
+        // 賃金関連フィールド: 桁数制限（maxLen不明だが6桁超はエラーなので1桁に）
+        applyXml = applyXml.replace(/<(賃金締切日|賃金支払日当翌|賃金支払日)>(\d{4,})<\/\1>/g, '<$1>1</$1>')
         console.log(`[${proc.proc_id}] apply filled ${Object.keys(testValues).length} fields + ${fallbackCount} fallback`)
         zip.file(applyPath, applyXml)
       }
