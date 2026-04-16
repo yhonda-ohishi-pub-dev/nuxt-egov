@@ -4,7 +4,7 @@ import type { EgovClient } from '@ippoan/egov-shinsei-sdk'
 import JSZip from 'jszip'
 import { TEST_PROCEDURES, PROCS_WITH_DESTINATION, type TestProcedure } from '~/utils/finalTestProcedures'
 
-const { isAuthenticated, startLogin, apiFetch, getClient } = useEgovAuth()
+const { isAuthenticated, startLogin, logout, apiFetch, getClient } = useEgovAuth()
 const { pfxLoaded, certSubject, extraPfxCount, loadPfx, loadTestPfx, loadExtraPfx, signKouseiXml, signConfigXml } = useXmlSign()
 
 const useGbizId = ref(false)
@@ -684,7 +684,10 @@ const doneCount = computed(() => [...results.value.values()].filter(r => r.statu
 
 <template>
   <div style="max-width: 1200px; margin: 0 auto; padding: 20px; font-family: sans-serif;">
-    <h1>最終確認試験 - 申請送信 <span style="font-size: 12px; color: #6c757d; font-weight: normal;">{{ gitCommit }}</span></h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1>最終確認試験 - 申請送信 <span style="font-size: 12px; color: #6c757d; font-weight: normal;">{{ gitCommit }}</span></h1>
+      <button v-if="isAuthenticated" @click="logout" style="padding: 6px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;">ログアウト</button>
+    </div>
 
     <div v-if="!isAuthenticated" style="padding: 20px; background: #fff3cd; border-radius: 8px; margin-bottom: 20px;">
       <p>e-Govにログインしてください</p>
